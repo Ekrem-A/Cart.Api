@@ -4,7 +4,6 @@ dockerfilePath = "Cart.Api/Dockerfile"
 [deploy]
 healthcheckPath = "/health/live"
 healthcheckTimeout = 300
-startCommand = "dotnet Cart.Api.dll"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 

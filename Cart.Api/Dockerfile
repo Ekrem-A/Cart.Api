@@ -12,8 +12,8 @@ EXPOSE 8081
 # Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl for health checks and ICU for globalization
+RUN apk add --no-cache curl icu-libs
 
 # ============================================
 # Build Stage - SDK image for building
