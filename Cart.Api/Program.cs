@@ -4,8 +4,16 @@ using Cart.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Startup logging
+Console.WriteLine("===========================================");
+Console.WriteLine("Cart.Api Starting...");
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"REDIS_URL exists: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("REDIS_URL"))}");
+Console.WriteLine("===========================================");
+
 // Railway PORT support
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+Console.WriteLine($"Configuring to listen on port: {port}");
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Add services to the container
@@ -30,7 +38,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Health checks - Get Redis connection string (supports Railway REDIS_URL)
 var redisConnectionString = GetRedisConnectionString(builder.Configuration);
 builder.Services.AddHealthChecks()
-    .AddRedis(redisConnectionString, name: "redis", tags: new[] { "ready" });
+    .AddRedis(redisConnectionString, name: "redis", tags: new[] { "ready" }, timeout: TimeSpan.FromSeconds(5));
 
 var app = builder.Build();
 
@@ -58,6 +66,12 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
 {
     Predicate = _ => false
 });
+
+Console.WriteLine("===========================================");
+Console.WriteLine($"Cart.Api is starting on port {port}");
+Console.WriteLine("Health endpoints: /health/live, /health/ready");
+Console.WriteLine("Swagger: /swagger");
+Console.WriteLine("===========================================");
 
 app.Run();
 

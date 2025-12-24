@@ -19,14 +19,32 @@ public static class DependencyInjection
         services.Configure<CartOptions>(configuration.GetSection(CartOptions.SectionName));
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
 
-        // Redis connection - supports Railway REDIS_URL
+        // Redis connection - supports Railway REDIS_URL (Lazy initialization)
         var redisConnectionString = GetRedisConnectionString(configuration);
+        Console.WriteLine($"Redis connection string configured (host hidden for security)");
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var configOptions = ConfigurationOptions.Parse(redisConnectionString);
-            configOptions.AbortOnConnectFail = false;
-            return ConnectionMultiplexer.Connect(configOptions);
+            try
+            {
+                Console.WriteLine("Attempting to connect to Redis...");
+                var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+                configOptions.AbortOnConnectFail = false;
+                configOptions.ConnectTimeout = 15000; // 15 seconds
+                configOptions.SyncTimeout = 15000;
+                configOptions.AsyncTimeout = 15000;
+                configOptions.ConnectRetry = 5;
+                configOptions.ReconnectRetryPolicy = new LinearRetry(2000);
+                
+                var connection = ConnectionMultiplexer.Connect(configOptions);
+                Console.WriteLine($"Redis connected: {connection.IsConnected}");
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Redis connection error: {ex.Message}");
+                throw;
+            }
         });
 
         // Repositories
