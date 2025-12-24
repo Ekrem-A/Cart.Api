@@ -23,19 +23,19 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copy csproj files first for better layer caching
-COPY ["Cart/Cart.Api.csproj", "Cart/"]
+COPY ["Cart.Api/Cart.Api.csproj", "Cart.Api/"]
 COPY ["Cart.Application/Cart.Application.csproj", "Cart.Application/"]
 COPY ["Cart.Domain/Cart.Domain.csproj", "Cart.Domain/"]
 COPY ["Cart.Infrastructure/Cart.Infrastructure.csproj", "Cart.Infrastructure/"]
 
 # Restore dependencies
-RUN dotnet restore "./Cart/Cart.Api.csproj"
+RUN dotnet restore "./Cart.Api/Cart.Api.csproj"
 
 # Copy all source code
 COPY . .
 
 # Build the application
-WORKDIR "/src/Cart"
+WORKDIR "/src/Cart.Api"
 RUN dotnet build "./Cart.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
 
 # ============================================
@@ -63,15 +63,14 @@ RUN chown -R appuser:appgroup /app
 # Switch to non-root user
 USER appuser
 
-# Environment variables
-ENV ASPNETCORE_URLS=http://+:8080 \
-    ASPNETCORE_ENVIRONMENT=Production \
+# Environment variables - Railway uses PORT env variable
+ENV ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health/live || exit 1
+# Health check disabled for Railway (Railway has its own health checks)
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+#     CMD curl -f http://localhost:${PORT:-8080}/health/live || exit 1
 
 # Labels
 LABEL maintainer="Cart.Api Team" \
